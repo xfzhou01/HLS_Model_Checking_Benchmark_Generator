@@ -1,0 +1,8 @@
+*/__pycache__/
+output/
+.clang-tidy
+abc.history
+1.aig
+log.txt
+*.png
+compile_command.json
