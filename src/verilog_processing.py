@@ -61,7 +61,8 @@ class VerilogFile:
         self.raw_lines = []
         with open(path) as f:
             for line in f:
-                assert line.endswith("\n")
+                if not line.endswith("\n"):
+                    raise ValueError(f"expected line end with switch line but got line = {line}")
                 self.raw_lines.append(line[:-1])  # remove `\n`
         self.parse_modules()
 
@@ -69,7 +70,16 @@ class VerilogFile:
         "Fill up `self.modules` given `self.raw_lines`."
         self.modules = []
         curr_module = None
+
+        is_entering_function = False
+
         for i, line in enumerate(self.raw_lines):
+
+            if line.startswith("function"):
+                is_entering_function = True
+            if line.startswith("enfunction"):
+                is_entering_function = False
+
             if line.startswith("module "):
                 curr_module = VerilogModule()
                 curr_module.start_line = i
@@ -77,7 +87,7 @@ class VerilogFile:
             elif line.startswith("endmodule"):
                 curr_module.end_line = i
                 self.modules.append(curr_module)
-            elif line.startswith("input "):  # assume one line per input
+            elif line.startswith("input ") and not is_entering_function:  # assume one line per input
                 last_token = line.split()[-1]
                 assert last_token.endswith(";")
                 name = last_token[:-1]
@@ -96,7 +106,7 @@ class VerilogFile:
                     curr_module.name_to_width[name] = width
                 else:
                     curr_module.name_to_width[name] = 1
-            elif line.startswith("output "):  # assume one line per output
+            elif line.startswith("output ") and not is_entering_function:  # assume one line per output
                 last_token = line.split()[-1]
                 assert last_token.endswith(";")
                 name = last_token[:-1]
@@ -159,7 +169,14 @@ def merge_valid_signals(src: VerilogFile) -> VerilogFile:
     "Merge all valid signals into one. Assume there is only one module, I am lazy..."
     dst = VerilogFile()
     dst.raw_lines.append("// Processed by function `merge_valid_signals` in `verilog_tricks.py`.")
-    m, = src.modules
+    try:
+        m, = src.modules
+    except ValueError as e:
+        # print(f"[ERROR] src file = {src.raw_lines}")
+        print(f"[ERROR] src modules = {src.modules}")
+        for _ in src.modules:
+            print(f"[ERROR] src module: {vars(_)}")
+        raise e
     curr_src_line_index = 0
 
     while curr_src_line_index < len(src.raw_lines):

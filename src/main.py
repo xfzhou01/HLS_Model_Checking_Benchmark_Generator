@@ -2,6 +2,7 @@ from random_graph_manager import RandomGraphManager
 from vitis_hls_compiler import VitisHLSCompiler
 from miter_generator import MiterGenerator
 from yosys_compiler import YosysCompiler
+from kairos_pre_processor import KairosPreprocessor
 import os
 import sys
 import argparse
@@ -199,7 +200,8 @@ def main():
                     miter_generator = MiterGenerator(
                         verilog_file_path_list_1=verilog_files_1,
                         verilog_file_path_list_2=verilog_files_2,
-                        merged_verilog_folder_path=miter_output_dir
+                        merged_verilog_folder_path=miter_output_dir,
+                        top_name=args.top_function
                     )
                     
                     # Generate the miter

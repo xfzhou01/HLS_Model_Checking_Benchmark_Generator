@@ -1,10 +1,12 @@
 import os
 from verilog_processing import kairos_preprocess
+from kairos_pre_processor import KairosPreprocessor
 import re
 class MiterGenerator:
     def __init__(self, verilog_file_path_list_1:list[str],
                  verilog_file_path_list_2:list[str],
-                 merged_verilog_folder_path:str):
+                 merged_verilog_folder_path:str,
+                 top_name:str):
         if not isinstance(verilog_file_path_list_1, list):
             raise TypeError()
         if not isinstance(verilog_file_path_list_2, list):
@@ -21,13 +23,23 @@ class MiterGenerator:
                 raise FileNotFoundError()
         if not os.path.isdir(merged_verilog_folder_path):
             raise FileNotFoundError()
+        if not isinstance(top_name, str):
+            raise TypeError()
+        if top_name == "":
+            raise ValueError()
         
         self.verilog_file_path_list_1 = verilog_file_path_list_1
         self.verilog_file_path_list_2 = verilog_file_path_list_2
 
         self.merged_verilog_file_path_1 = os.path.join(merged_verilog_folder_path,"merged_1.v")
         self.merged_verilog_file_path_2 = os.path.join(merged_verilog_folder_path,"merged_2.v")
+        self.merged_verilog_file_path_1_proc = os.path.join(merged_verilog_folder_path,"merged_1_proc.v")
+        self.merged_verilog_file_path_2_proc = os.path.join(merged_verilog_folder_path,"merged_2_proc.v")
         self.miter_verilog_file_path = os.path.join(merged_verilog_folder_path, "miter.v")
+        self.working_dir = merged_verilog_folder_path
+        self.top_name = top_name
+        self.kpp1 = None
+        self.kpp2 = None
 
     def _merge_verilog(self):
         print("[INFO] start merge verilog")
@@ -47,16 +59,37 @@ class MiterGenerator:
     def _generate_miter(self, insert_assertions=False):
         print("[INFO] start generate miter")
         self._merge_verilog()
+
+        self.kpp1 = KairosPreprocessor(
+            working_dir=self.working_dir,
+            top_name=self.top_name,
+            verilog_file_path_before_preprocess=self.merged_verilog_file_path_1,
+            verilog_file_path_after_preprocess=self.merged_verilog_file_path_1_proc
+        )
+        self.kpp1.process()
+        self.kpp2 = KairosPreprocessor(
+            working_dir=self.working_dir,
+            top_name=self.top_name,
+            verilog_file_path_before_preprocess=self.merged_verilog_file_path_2,
+            verilog_file_path_after_preprocess=self.merged_verilog_file_path_2_proc
+        )
+        self.kpp2.process()
+
         if not os.path.exists(self.merged_verilog_file_path_1):
             raise FileNotFoundError()
         if not os.path.exists(self.merged_verilog_file_path_2):
             raise FileNotFoundError()
-        kairos_top = kairos_preprocess(
-            src_file_1=self.merged_verilog_file_path_1,
-            src_file_2=self.merged_verilog_file_path_2,
-            dst_file=self.miter_verilog_file_path,
-            fast_slow_mode=True
-        )
+        try:
+            kairos_top = kairos_preprocess(
+                src_file_1=self.merged_verilog_file_path_1_proc,
+                src_file_2=self.merged_verilog_file_path_2_proc,
+                dst_file=self.miter_verilog_file_path,
+                fast_slow_mode=True
+            )
+        except Exception as e:
+            print(f"[ERROR] src_file_1 = {self.merged_verilog_file_path_1_proc}")
+            print(f"[ERROR] src_file_2 = {self.merged_verilog_file_path_2_proc}")
+            raise e
         if insert_assertions:
             self._insert_assertion(kairos_top=kairos_top)
         return kairos_top

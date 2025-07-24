@@ -483,13 +483,13 @@ class RandomGraphManager(GraphManager):
         """
         self._reset_all()
         action_list = [
-            self._action_random_add_array,
+            # self._action_random_add_array,
             self._action_random_add_input, 
             self._action_random_add_op,
             self._action_random_add_loop,
             self._action_random_add_branch,
-            self._action_random_add_array_visit,
-            self._action_random_add_array_write
+            # self._action_random_add_array_visit,
+            # self._action_random_add_array_write
         ]
         
         print("[INFO] Starting random graph generation with 100 actions...")
