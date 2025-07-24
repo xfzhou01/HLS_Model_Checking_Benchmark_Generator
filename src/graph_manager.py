@@ -1103,6 +1103,52 @@ class GraphManager:
             raise ValueError(f"loop node list: {loop_node_list}, loop node counter: {self.loop_node_counter}")
         return self.loop_node_counter > 0
     
+    
+    
+    def _make_single_output(self):
+
+        single_node_list = []
+        for node in self.program_graph.nodes():
+            if isinstance(node, ArrayNode):
+                raise ValueError("Currently we do not support ArrayNode")
+            if isinstance(node, OpNode):
+                if node.op_type == OperationType.VISIT:
+                    raise ValueError("Currently we do not support visit node")
+                if node.op_type == OperationType.WRITE:
+                    raise ValueError("Currently we do not support write node")
+            if len(list(self.program_graph.successors(node))) == 0 and \
+                isinstance(node, OpNode):
+                single_node_list.append(node)
+        
+        if len(single_node_list) <= 1:
+            return
+        print("[INFO] detect multiple output nodes, use add to make it simple output")
+        froniter_node = single_node_list[0]
+        for i in range(len(single_node_list) - 1):
+            froniter_node = self.add_op_node(
+                op_type=OperationType.ADD,
+                predecessor_list=[froniter_node, single_node_list[i+1]],
+                result_type=ResultDataType.AP_INT,
+                result_width=32
+            )
+        single_node_list_check = []
+        for node in self.program_graph.nodes():
+            if isinstance(node, ArrayNode):
+                raise ValueError("Currently we do not support ArrayNode")
+            if isinstance(node, OpNode):
+                if node.op_type == OperationType.VISIT:
+                    raise ValueError("Currently we do not support visit node")
+                if node.op_type == OperationType.WRITE:
+                    raise ValueError("Currently we do not support write node")
+            if len(list(self.program_graph.successors(node))) == 0 and \
+                isinstance(node, OpNode):
+                single_node_list_check.append(node)
+        if len(single_node_list_check) != 1:
+            raise ValueError()
+            
+        
+
+    
     def print_node_list(self, ident = ""):
         print(f"{ident} node list info: ")
         for node in self.program_graph.nodes():

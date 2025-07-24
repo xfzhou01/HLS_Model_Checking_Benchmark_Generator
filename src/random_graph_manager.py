@@ -486,16 +486,16 @@ class RandomGraphManager(GraphManager):
             # self._action_random_add_array,
             self._action_random_add_input, 
             self._action_random_add_op,
-            self._action_random_add_loop,
-            self._action_random_add_branch,
+            # self._action_random_add_loop,
+            # self._action_random_add_branch,
             # self._action_random_add_array_visit,
             # self._action_random_add_array_write
         ]
         
         print("[INFO] Starting random graph generation with 100 actions...")
         successful_actions = 0
-        
-        for i in range(100):
+        action_number_total = 200
+        for i in range(action_number_total):
             # Randomly select an action from the list
             action = random.choice(action_list)
             
@@ -504,13 +504,13 @@ class RandomGraphManager(GraphManager):
                 success = action()
                 if success:
                     successful_actions += 1
-                    print(f"[INFO] Action {i+1}/100 completed successfully")
+                    print(f"[INFO] Action {i+1}/{action_number_total} completed successfully")
                 else:
-                    print(f"[INFO] Action {i+1}/100 skipped (insufficient nodes)")
+                    print(f"[INFO] Action {i+1}/{action_number_total} skipped (insufficient nodes)")
             except Exception as e:
-                print(f"[ERROR] Action {i+1}/100 failed with error: {e}")
+                print(f"[ERROR] Action {i+1}/{action_number_total} failed with error: {e}")
                 raise e
-        
+        self._make_single_output()
         print(f"[INFO] Random graph generation completed. {successful_actions}/100 actions were successful.")
         return True
     

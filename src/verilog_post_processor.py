@@ -40,9 +40,9 @@ class VerilogPostProcessor:
         if not module_decl_line.startswith("module "):
             raise ValueError(f"unexpected module decl line: {module_decl_line}")
         if not module_decl_line.count("(") == 1:
-            raise ValueError()
+            raise ValueError(f"unexpected module decl line: {module_decl_line}")
         if not module_decl_line.count(")") == 1:
-            raise ValueError()
+            raise ValueError(f"unexpected module decl line: {module_decl_line}")
         
         ports_str = module_decl_line.split("(")[1].split(")")[0]
         ports_l = ports_str.split(",")
@@ -50,6 +50,10 @@ class VerilogPostProcessor:
         for p in ports_l:
             if not re.match(r'^\w+$', p):
                 raise ValueError(f"Port '{p}' is not a valid word in module declaration: {module_decl_line}")
+        if "ap_rst" not in ports_l:
+            raise ValueError(f"expected to have `ap_rst` port as reset, but got decl line: {module_decl_line}")
+        if "ap_clk" not in ports_l:
+            raise ValueError(f"expected to have `ap_clk` port as clock, but got decl line: {module_decl_line}")
         
         top_module_name = module_decl_line.split("(")[0].split(" ")[1].strip()
         if not re.match(r'^\w+$', top_module_name):
@@ -88,7 +92,10 @@ class VerilogPostProcessor:
             if fl.startswith("module "):
                 is_entering_module = True
                 is_entering_module_decl = True
-                module_decl_line = fl            
+                module_decl_line = fl    
+                if fl.endswith(");"): 
+                    is_entering_module_decl = False
+                    new_lines_decl_list = self._convert_module_decl_line(module_decl_line)
             elif is_entering_module_decl:
                 module_decl_line += fl
                 if fl.endswith(");"): 
